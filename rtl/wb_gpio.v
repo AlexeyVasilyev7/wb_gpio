@@ -1,3 +1,10 @@
+`timescale 1ns / 1ps
+
+`define ADDR_OEN    5'b00000
+`define ADDR_SET    5'b00100
+`define ADDR_RESET  5'b01000
+`define ADDR_READ   5'b10000
+
 module wb_gpio (
   input clk_sys_i,
   input rst_n_i,
@@ -15,7 +22,6 @@ module wb_gpio (
   input wb_we_i,
   output reg wb_ack_o
 );
-
   reg [7:0] oen;
   reg [7:0] out;
 
@@ -39,7 +45,23 @@ module wb_gpio (
       wb_dat_o <= 0;
     else if(wb_read)
       case (wb_adr_i) 
-        //some wb logic
+        `ADDR_OEN  : wb_dat_o <= oen;
+        `ADDR_READ : wb_dat_o <= gpio_in_i;
+        `ADDR_SET  : wb_dat_o <= out;
         default    : wb_dat_o <= 0;
       endcase
+  
+  always @(posedge clk_sys_i or negedge rst_n_i)
+    if(!rst_n_i)
+      oen <= 8'h00;
+    else if(wb_adr_i == `ADDR_OEN && wb_write)
+      oen <= wb_dat_i[7:0];
+
+  always @(posedge clk_sys_i or negedge rst_n_i)
+    if(!rst_n_i)
+      out <= 8'h00;
+    else if(wb_adr_i == `ADDR_RESET && wb_write)
+      out <= wb_dat_i[7:0];
+    else if(wb_adr_i == `ADDR_SET && wb_write)
+      out <= out | wb_dat_i[7:0];
 endmodule
