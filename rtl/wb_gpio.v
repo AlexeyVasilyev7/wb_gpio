@@ -16,5 +16,30 @@ module wb_gpio (
   output reg wb_ack_o
 );
 
-// logic for gpio
+  reg [7:0] oen;
+  reg [7:0] out;
+
+  wire wb_transaction = wb_cyc_i && wb_stb_i;
+  wire wb_write = wb_we_i && wb_transaction;
+  wire wb_read = !wb_we_i && wb_transaction;
+  
+  assign gpio_oen_o = oen;
+  assign gpio_out_o = out;
+  
+  always @(posedge clk_sys_i or negedge rst_n_i)
+    if(!rst_n_i)
+      wb_ack_o <= 0;
+    else if(wb_transaction)
+      wb_ack_o <= 1;
+    else
+      wb_ack_o <= 0;
+  
+  always @(posedge clk_sys_i or negedge rst_n_i)
+    if(!rst_n_i)
+      wb_dat_o <= 0;
+    else if(wb_read)
+      case (wb_adr_i) 
+        //some wb logic
+        default    : wb_dat_o <= 0;
+      endcase
 endmodule
